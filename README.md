@@ -124,15 +124,28 @@ Creates the main immutable `Context`. Each sub-object is a `Proxy` that:
 - **Returns `undefined`** for names that don’t exist (except for `ENV`, which returns `''`)
 - **Is not enumerable** by design (don’t rely on `Object.keys`)
 
-### `buildContextProxy<T>(context: Context, bindingsDefs: T): ContextProxy<T>`
+### `buildContextProxy<T>(bindingsDefs: T): ContextProxy<T>`
 
 Creates a custom, strongly-typed proxy object based on your definitions.
 
-- `context`: An instance of the main `Context` object
 - `bindingsDefs`: A `const` object defining your desired bindings
   - **Key**: The property name you want on your final `contextProxy` object
   - **Value**: A string in the format `'ResourceType'` or `'ResourceType:actual-name'`
 - **Returns**: A proxy object `contextProxy` with your custom bindings. Accessing a property on this object looks up the resource from the main `Context`
+
+### Type `ContentProxy<T>`
+
+Defines a type that represents the content proxy, inferred from your bindings definitions.
+
+### (Advanced) `buildContextProxyOn<C, T>(target: C, bindingsDefs: T): C & ContextProxy<T>`
+
+Extends the passed-in object with a custom, strongly-typed proxy object based on your definitions.
+
+- `target`: An object to extend
+- `bindingsDefs`: A `const` object defining your desired bindings
+  - **Key**: The property name you want on your final `contextProxy` object
+  - **Value**: A string in the format `'ResourceType'` or `'ResourceType:actual-name'`
+- **Returns**: A proxy object `contextProxy` that extends `target` with your custom bindings. Accessing a property on this object looks up the resource from the main `Context` before falling back to `target`.
 
 ### Context Categories & Shapes
 
@@ -151,7 +164,6 @@ Creates a custom, strongly-typed proxy object based on your definitions.
 - **Don’t enumerate** category proxies; treat them as name-indexed lookups
 - **Don’t mutate** the context or its sub-objects; it’s intentionally `Readonly`
 - **Expect `undefined`** for missing resources and code accordingly (`?.`/guard)
-
 
 ## Issues
 
