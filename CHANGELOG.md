@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [0.5.5] - 2026-01-07
+
 ### Fixed
 
 - Correct CI for GitHub packages
@@ -57,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial public release
 
-[unreleased]: https://github.com/fastly/compute-js-context/compare/v0.5.4...HEAD
+[unreleased]: https://github.com/fastly/compute-js-context/compare/v0.5.5...HEAD
+[0.5.5]: https://github.com/fastly/compute-js-context/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/fastly/compute-js-context/compare/v0.5.2...v0.5.4
 [0.5.2]: https://github.com/fastly/compute-js-context/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/fastly/compute-js-context/compare/v0.5.0...v0.5.1

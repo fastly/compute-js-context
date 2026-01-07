@@ -1,6 +1,6 @@
 {
   "name": "@fastly/compute-js-context",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Surfaces Fastly Compute environment as a context object",
   "license": "MIT",
   "repository": {
