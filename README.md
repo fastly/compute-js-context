@@ -165,6 +165,32 @@ Extends the passed-in object with a custom, strongly-typed proxy object based on
 - **Don’t mutate** the context or its sub-objects; it’s intentionally `Readonly`
 - **Expect `undefined`** for missing resources and code accordingly (`?.`/guard)
 
+## Development
+
+```bash
+npm install
+npm run build              # compile src/ to build/
+npm test                   # typecheck + unit tests
+npm run test:coverage      # unit tests with a coverage report
+npm run test:integration   # integration tests (requires the Fastly CLI)
+```
+
+### Unit tests
+
+Unit tests live in `test/unit/` and run in Node with [Vitest](https://vitest.dev/). Since the `fastly:*` modules only exist inside the Compute runtime, `vitest.config.ts` aliases them to in-memory fakes in `test/unit/fakes/`. Tests declare which resources exist with `provision()` from `test/unit/fakes/registry.ts`; opening anything else throws, as it does in the real runtime.
+
+### Integration tests
+
+Integration tests exercise the built library inside the real Compute runtime, against every supported major version of `@fastly/js-compute`:
+
+1. `npm run build` compiles the library to `build/`.
+2. `test/integration/build-apps.mjs` compiles the test app (`test/integration/app/index.js`) once per SDK version listed in `test/integration/sdk-versions.mjs`, writing `test/integration/app/bin/app-<version>.wasm`.
+3. `test/integration/context.test.ts` serves each Wasm binary with `fastly compute serve` (Viceroy), using the local resources declared in `test/integration/app/fastly.toml`, and checks that each version's JSON report matches the expected values.
+
+These require the [Fastly CLI](https://www.fastly.com/documentation/reference/tools/cli/) on your `PATH`. Set `FASTLY_CLI` to use a different binary.
+
+The current SDK major is the `@fastly/js-compute` devDependency. Older majors are installed under npm aliases (e.g. `"js-compute-v3": "npm:@fastly/js-compute@^3.46.0"`). To test another major, add an alias devDependency and an entry in `sdk-versions.mjs`.
+
 ## Issues
 
 If you encounter any non-security-related bug or unexpected behavior, please [file an issue][bug] using the bug report template.

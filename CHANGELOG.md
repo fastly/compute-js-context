@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+### Updated
+
+- Support `@fastly/js-compute` v4 (peer dependency is now `^3.32.0 || ^4.0.0`)
+
+### Added
+
+- Unit tests, and integration tests that run under Viceroy against both v3 and v4 of `@fastly/js-compute`
+
 ## [0.5.6] - 2026-02-13
 
 ### Updated
