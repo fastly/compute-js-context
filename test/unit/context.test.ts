@@ -3,14 +3,28 @@
  * Licensed under the MIT license. See LICENSE file for details.
  */
 
-import { describe, expect, it } from 'vitest';
-import { loadFresh } from './helpers/load.js';
+// createContext() memoizes at module scope, so every test in this file shares one
+// context (node:test runs each file in its own process). Tests use distinct
+// resource names so that lookups cached by one test don't affect another.
+
+import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
+import { createContext } from '../../src/index.js';
+import { callsFor, provision, registry, resetRegistry } from './fakes/registry.js';
+
+beforeEach(() => {
+  resetRegistry();
+});
 
 describe('createContext', () => {
-  it('exposes every resource category', async () => {
-    const { createContext } = await loadFresh();
-    const ctx = createContext();
-    expect(Object.keys(ctx).sort()).toEqual([
+  // Must run first, before anything else in this file creates the context.
+  it('does not open any resources when first created', () => {
+    createContext();
+    assert.equal(registry.calls.length, 0);
+  });
+
+  it('exposes every resource category', () => {
+    assert.deepEqual(Object.keys(createContext()).sort(), [
       'ACLS',
       'BACKENDS',
       'CONFIG_STORES',
@@ -21,53 +35,44 @@ describe('createContext', () => {
     ]);
   });
 
-  it('returns the same context on every call', async () => {
-    const { createContext } = await loadFresh();
-    expect(createContext()).toBe(createContext());
+  it('returns the same context on every call', () => {
+    assert.equal(createContext(), createContext());
   });
 
-  it('returns a frozen context', async () => {
-    const { createContext } = await loadFresh();
+  it('returns a frozen context', () => {
     const ctx = createContext();
-    expect(Object.isFrozen(ctx)).toBe(true);
-    expect(() => {
+    assert.equal(Object.isFrozen(ctx), true);
+    assert.throws(() => {
       (ctx as { ENV: unknown }).ENV = {};
-    }).toThrow(TypeError);
+    }, TypeError);
   });
 
-  it('does not open any resources when created', async () => {
-    const { createContext, registry } = await loadFresh();
-    createContext();
-    expect(registry.calls).toHaveLength(0);
-  });
-
-  it('routes each category to the matching resource type', async () => {
-    const { createContext, provision, registry } = await loadFresh();
-    provision('Acl', 'a');
-    provision('Backend', 'b');
-    provision('ConfigStore', 'c');
-    provision('KVStore', 'k');
-    provision('Logger', 'l');
-    provision('SecretStore', 's');
-    registry.env.set('E', 'e');
+  it('routes each category to the matching resource type', () => {
+    provision('Acl', 'route-a');
+    provision('Backend', 'route-b');
+    provision('ConfigStore', 'route-c');
+    provision('KVStore', 'route-k');
+    provision('Logger', 'route-l');
+    provision('SecretStore', 'route-s');
+    registry.env.set('ROUTE_E', 'e');
 
     const ctx = createContext();
-    expect(ctx.ACLS.a).toBeDefined();
-    expect(ctx.BACKENDS.b).toBeDefined();
-    expect(ctx.CONFIG_STORES.c).toBeDefined();
-    expect(ctx.KV_STORES.k).toBeDefined();
-    expect(ctx.LOGGERS.l).toBeDefined();
-    expect(ctx.SECRET_STORES.s).toBeDefined();
-    expect(ctx.ENV.E).toBe('e');
+    assert.notEqual(ctx.ACLS['route-a'], undefined);
+    assert.notEqual(ctx.BACKENDS['route-b'], undefined);
+    assert.notEqual(ctx.CONFIG_STORES['route-c'], undefined);
+    assert.notEqual(ctx.KV_STORES['route-k'], undefined);
+    assert.notEqual(ctx.LOGGERS['route-l'], undefined);
+    assert.notEqual(ctx.SECRET_STORES['route-s'], undefined);
+    assert.equal(ctx.ENV.ROUTE_E, 'e');
 
     // Names provisioned for one type are not visible through another.
-    expect(ctx.BACKENDS.a).toBeUndefined();
-    expect(ctx.KV_STORES.c).toBeUndefined();
+    assert.equal(ctx.BACKENDS['route-a'], undefined);
+    assert.equal(ctx.KV_STORES['route-c'], undefined);
   });
 
-  it('shares cached resources across calls', async () => {
-    const { createContext, provision } = await loadFresh();
-    provision('KVStore', 'k');
-    expect(createContext().KV_STORES.k).toBe(createContext().KV_STORES.k);
+  it('shares cached resources across calls', () => {
+    provision('KVStore', 'shared-k');
+    assert.equal(createContext().KV_STORES['shared-k'], createContext().KV_STORES['shared-k']);
+    assert.equal(callsFor('KVStore', 'shared-k').length, 1);
   });
 });

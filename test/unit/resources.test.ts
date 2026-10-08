@@ -3,7 +3,8 @@
  * Licensed under the MIT license. See LICENSE file for details.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
 import { Acl } from 'fastly:acl';
 import { Backend } from 'fastly:backend';
 import { ConfigStore } from 'fastly:config-store';
@@ -36,71 +37,73 @@ const resourceMaps: {
   { kind: 'SecretStore', create: createSecretStores, cls: SecretStore },
 ];
 
-describe.each(resourceMaps)('$kind map', ({ kind, create, cls }) => {
-  it('returns an instance for a provisioned resource', () => {
-    provision(kind, 'mine');
-    const map = create();
-    const value = map.mine;
-    expect(value).toBeInstanceOf(cls);
-    expect((value as { name: string }).name).toBe('mine');
-  });
+for (const { kind, create, cls } of resourceMaps) {
+  describe(`${kind} map`, () => {
+    it('returns an instance for a provisioned resource', () => {
+      provision(kind, 'mine');
+      const map = create();
+      const value = map.mine;
+      assert.ok(value instanceof cls);
+      assert.equal((value as { name: string }).name, 'mine');
+    });
 
-  it('returns undefined when opening the resource throws', () => {
-    const map = create();
-    expect(map.missing).toBeUndefined();
-    expect(callsFor(kind, 'missing')).toHaveLength(1);
-  });
+    it('returns undefined when opening the resource throws', () => {
+      const map = create();
+      assert.equal(map.missing, undefined);
+      assert.equal(callsFor(kind, 'missing').length, 1);
+    });
 
-  it('does not open any resource until accessed', () => {
-    provision(kind, 'mine');
-    create();
-    expect(registry.calls).toHaveLength(0);
-  });
+    it('does not open any resource until accessed', () => {
+      provision(kind, 'mine');
+      create();
+      assert.equal(registry.calls.length, 0);
+    });
 
-  it('opens each resource at most once', () => {
-    provision(kind, 'mine');
-    const map = create();
-    expect(map.mine).toBe(map.mine);
-    map.missing;
-    map.missing;
-    expect(callsFor(kind, 'mine')).toHaveLength(1);
-    expect(callsFor(kind, 'missing')).toHaveLength(1);
-  });
+    it('opens each resource at most once', () => {
+      provision(kind, 'mine');
+      const map = create();
+      assert.equal(map.mine, map.mine);
+      map.missing;
+      map.missing;
+      assert.equal(callsFor(kind, 'mine').length, 1);
+      assert.equal(callsFor(kind, 'missing').length, 1);
+    });
 
-  it('supports the `in` operator', () => {
-    provision(kind, 'mine');
-    const map = create();
-    expect('mine' in map).toBe(true);
-    expect('missing' in map).toBe(false);
-  });
+    it('supports the `in` operator', () => {
+      provision(kind, 'mine');
+      const map = create();
+      assert.equal('mine' in map, true);
+      assert.equal('missing' in map, false);
+    });
 
-  it('opens only the named resource type', () => {
-    provision(kind, 'mine');
-    create().mine;
-    expect(registry.calls).toEqual([{ kind, name: 'mine' }]);
+    it('opens only the named resource type', () => {
+      provision(kind, 'mine');
+      create().mine;
+      assert.deepEqual(registry.calls, [{ kind, name: 'mine' }]);
+    });
   });
-});
+}
 
 describe('env map', () => {
   it('returns environment variable values', () => {
     registry.env.set('FASTLY_HOSTNAME', 'localhost');
     registry.env.set('CUSTOM', 'value');
     const env = createEnv();
-    expect(env.FASTLY_HOSTNAME).toBe('localhost');
-    expect(env.CUSTOM).toBe('value');
+    assert.equal(env.FASTLY_HOSTNAME, 'localhost');
+    assert.equal(env.CUSTOM, 'value');
   });
 
   it('returns whatever the runtime returns for unset variables', () => {
     const env = createEnv();
-    expect(env.NOT_SET).toBeUndefined();
-    expect('NOT_SET' in env).toBe(false);
+    assert.equal(env.NOT_SET, undefined);
+    assert.equal('NOT_SET' in env, false);
   });
 
   it('treats an empty string value as present', () => {
     registry.env.set('EMPTY', '');
     const env = createEnv();
-    expect(env.EMPTY).toBe('');
-    expect('EMPTY' in env).toBe(true);
+    assert.equal(env.EMPTY, '');
+    assert.equal('EMPTY' in env, true);
   });
 
   it('reads each variable at most once', () => {
@@ -108,6 +111,6 @@ describe('env map', () => {
     const env = createEnv();
     env.FASTLY_POP;
     env.FASTLY_POP;
-    expect(callsFor('env', 'FASTLY_POP')).toHaveLength(1);
+    assert.equal(callsFor('env', 'FASTLY_POP').length, 1);
   });
 });
