@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": [
+      "@fastly/js-compute",
+      "node"
+    ]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.mts",
+    "../src/**/*.ts",
+    "../vitest*.config.ts"
+  ]
+}
