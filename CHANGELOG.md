@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Peer dependency is now `@fastly/js-compute` `^3.33.0 || ^4.0.0`: 3.32.x doesn't provide the `fastly:acl` type declarations that this package's types import
 - Integration tests install the packed package, type-check against each SDK version's types, and also run against the minimum supported 3.x
 
+### Fixed
+
+- README: `ENV` returns `undefined` (not `''`) for an environment variable that isn't set, and its type is `Record<string, string | undefined>`
+- README: heading for the `ContextProxy<T>` type (was `ContentProxy<T>`)
+
 ## [0.6.0] - 2026-10-08
 
 ### Updated

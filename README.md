@@ -50,7 +50,7 @@ addEventListener('fetch', (event) => event.respondWith(handler(event)));
 async function handler(event) {
   const ctx = createContext();
 
-  // Environment - simple strings (or empty string if not present)
+  // Environment - strings, or undefined if not set
   console.log('FASTLY_SERVICE_VERSION', ctx.ENV.FASTLY_SERVICE_VERSION);
 
   // Secret Store - property is the SecretStore object, or undefined if not configured
@@ -121,7 +121,7 @@ Creates the main immutable `Context`. Each sub-object is a `Proxy` that:
 
 - **Resolves lazily** on first property access
 - **Caches** the resolved handle for subsequent accesses
-- **Returns `undefined`** for names that don’t exist (except for `ENV`, which returns `''`)
+- **Returns `undefined`** for names that don’t exist
 - **Is not enumerable** by design (don’t rely on `Object.keys`)
 
 ### `buildContextProxy<T>(bindingsDefs: T): ContextProxy<T>`
@@ -133,9 +133,9 @@ Creates a custom, strongly-typed proxy object based on your definitions.
   - **Value**: A string in the format `'ResourceType'` or `'ResourceType:actual-name'`
 - **Returns**: A proxy object `contextProxy` with your custom bindings. Accessing a property on this object looks up the resource from the main `Context`
 
-### Type `ContentProxy<T>`
+### Type `ContextProxy<T>`
 
-Defines a type that represents the content proxy, inferred from your bindings definitions.
+Defines a type that represents the context proxy, inferred from your bindings definitions.
 
 ### (Advanced) `buildContextProxyOn<C, T>(target: C, bindingsDefs: T): C & ContextProxy<T>`
 
@@ -151,7 +151,7 @@ Extends the passed-in object with a custom, strongly-typed proxy object based on
 
 > These are the raw shapes available on the main `Context` object.
 
-- **`ENV`**: `Readonly<Record<string, string>>`
+- **`ENV`**: `Record<string, string | undefined>`, with the `FASTLY_*` variables (such as `FASTLY_SERVICE_VERSION`) declared as known keys
 - **`SECRET_STORES`**: `Readonly<Record<string, SecretStore | undefined>>`
 - **`CONFIG_STORES`**: `Readonly<Record<string, ConfigStore | undefined>>`
 - **`KV_STORES`**: `Readonly<Record<string, KVStore | undefined>>`
