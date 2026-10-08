@@ -9,7 +9,7 @@ import type { ConfigStore } from 'fastly:config-store';
 import type { KVStore } from 'fastly:kv-store';
 import type { Logger } from 'fastly:logger';
 import type { SecretStore } from 'fastly:secret-store';
-import { Context, createContext } from './index.js';
+import { type Context, createContext } from './index.js';
 
 type Def<T extends string> = T | `${T}:${string}`;
 type Defs<T extends string> = T extends string ? Def<T> : never;

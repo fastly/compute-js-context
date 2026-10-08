@@ -9,5 +9,5 @@ coverage/
 .idea/
 *.iml
 
-# Integration test build output
-test/integration/app/bin/
+# Integration test scratch (packed tarball, per-SDK app builds)
+test/integration/.work/

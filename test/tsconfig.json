@@ -10,7 +10,11 @@
   "include": [
     "**/*.ts",
     "**/*.mts",
-    "../src/**/*.ts",
-    "../vitest*.config.ts"
+    "../src/**/*.ts"
+  ],
+  "exclude": [
+    // Type-checked per SDK version by build-apps.mjs, against the packed library
+    "integration/app",
+    "integration/.work"
   ]
 }

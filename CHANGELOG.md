@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Updated
 
+- Build with TypeScript 7
+- Tests use Node's built-in test runner (`node:test`) in place of Vitest
+- Peer dependency is now `@fastly/js-compute` `^3.33.0 || ^4.0.0`: 3.32.x doesn't provide the `fastly:acl` type declarations that this package's types import
+- Integration tests install the packed package, type-check against each SDK version's types, and also run against the minimum supported 3.x
+
+## [0.6.0] - 2026-10-08
+
+### Updated
+
 - Support `@fastly/js-compute` v4 (peer dependency is now `^3.32.0 || ^4.0.0`)
 
 ### Added

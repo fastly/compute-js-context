@@ -6,10 +6,10 @@
 /// <reference types="@fastly/js-compute" />
 
 // Integration test app. Runs inside the Compute runtime (Viceroy), exercises the
-// built library against real resources declared in fastly.toml, and responds with
+// packed library against real resources declared in fastly.toml, and responds with
 // a JSON report that the test runner asserts against.
 
-import { createContext, buildContextProxy, buildContextProxyOn } from '../../../build/index.js';
+import { createContext, buildContextProxy, buildContextProxyOn } from '@fastly/compute-js-context';
 
 addEventListener('fetch', (event) => event.respondWith(handler(event)));
 

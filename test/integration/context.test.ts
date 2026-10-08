@@ -3,19 +3,18 @@
  * Licensed under the MIT license. See LICENSE file for details.
  */
 
-// Runs the integration app (built once per SDK major by build-apps.mjs) under the
+// Runs the integration app (built once per SDK version by build-apps.mjs) under the
 // Fastly CLI's local server (Viceroy) and asserts that every SDK version produces
 // the same, expected report.
 
+import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { SDK_VERSIONS } from './sdk-versions.mjs';
+import { join } from 'node:path';
+import { after, before, describe, it } from 'node:test';
+import { SDK_VERSIONS, sdkWorkDir } from './sdk-versions.mjs';
 
-const appDir = join(dirname(fileURLToPath(import.meta.url)), 'app');
 const fastlyCli = process.env.FASTLY_CLI ?? 'fastly';
 
 function getFreePort(): Promise<number> {
@@ -123,40 +122,47 @@ const expectedReport = {
   },
 };
 
-describe.each(SDK_VERSIONS)('integration with @fastly/js-compute $name', ({ name }) => {
-  const wasm = join(appDir, 'bin', `app-${name}.wasm`);
-  let proc: ChildProcess | undefined;
-  let output = '';
-  let report: Record<string, unknown>;
+for (const version of SDK_VERSIONS) {
+  describe(`integration with @fastly/js-compute@${version}`, () => {
+    const dir = sdkWorkDir(version);
+    const wasm = join(dir, 'bin', 'main.wasm');
+    let proc: ChildProcess | undefined;
+    let output = '';
+    let report: Record<string, unknown>;
 
-  beforeAll(async () => {
-    if (!existsSync(wasm)) {
-      throw new Error(`${wasm} not found. Run "npm run test:integration" to build it first.`);
-    }
-    const port = await getFreePort();
-    const url = `http://127.0.0.1:${port}/`;
-    proc = spawn(
-      fastlyCli,
-      ['compute', 'serve', '--skip-build', '--file', wasm, '--addr', `127.0.0.1:${port}`],
-      // Own process group, so the CLI and the Viceroy process it spawns can be stopped together.
-      { cwd: appDir, stdio: ['ignore', 'pipe', 'pipe'], detached: true },
-    );
-    proc.stdout?.on('data', (chunk) => { output += chunk; });
-    proc.stderr?.on('data', (chunk) => { output += chunk; });
-    await waitForServer(url, proc, () => output);
+    before(async () => {
+      if (!existsSync(wasm)) {
+        throw new Error(`${wasm} not found. Run "npm run test:integration" to build it first.`);
+      }
+      const port = await getFreePort();
+      const url = `http://127.0.0.1:${port}/`;
+      proc = spawn(
+        fastlyCli,
+        ['compute', 'serve', '--skip-build', '--file', wasm, '--addr', `127.0.0.1:${port}`],
+        // Own process group, so the CLI and the Viceroy process it spawns can be stopped together.
+        { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], detached: true },
+      );
+      proc.stdout?.on('data', (chunk) => { output += chunk; });
+      proc.stderr?.on('data', (chunk) => { output += chunk; });
+      await waitForServer(url, proc, () => output);
 
-    const res = await fetch(url);
-    expect(res.status).toBe(200);
-    report = await res.json();
-  }, 90_000);
+      const res = await fetch(url);
+      assert.equal(res.status, 200);
+      report = await res.json() as Record<string, unknown>;
+    }, { timeout: 90_000 });
 
-  afterAll(() => {
-    if (proc?.pid != null && proc.exitCode == null) {
-      process.kill(-proc.pid, 'SIGTERM');
+    after(() => {
+      // Kept for debugging failures
+      writeFileSync(join(dir, 'serve.log'), output);
+      if (proc?.pid != null && proc.exitCode == null) {
+        process.kill(-proc.pid, 'SIGTERM');
+      }
+    });
+
+    for (const section of Object.keys(expectedReport) as (keyof typeof expectedReport)[]) {
+      it(section, () => {
+        assert.deepEqual(report[section], expectedReport[section]);
+      });
     }
   });
-
-  it.each(Object.keys(expectedReport) as (keyof typeof expectedReport)[])('%s', (section) => {
-    expect(report[section]).toEqual(expectedReport[section]);
-  });
-});
+}

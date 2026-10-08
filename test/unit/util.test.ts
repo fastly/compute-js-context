@@ -3,83 +3,82 @@
  * Licensed under the MIT license. See LICENSE file for details.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import assert from 'node:assert/strict';
+import { describe, it, mock } from 'node:test';
 import { loadOptionalStringMap } from '../../src/util.js';
 
 describe('loadOptionalStringMap', () => {
   it('returns the value produced by the getter', () => {
     const map = loadOptionalStringMap((key) => `value-of-${key}`);
-    expect(map.foo).toBe('value-of-foo');
-    expect(map['with spaces and-dashes']).toBe('value-of-with spaces and-dashes');
+    assert.equal(map.foo, 'value-of-foo');
+    assert.equal(map['with spaces and-dashes'], 'value-of-with spaces and-dashes');
   });
 
   it('returns undefined when the getter returns undefined', () => {
     const map = loadOptionalStringMap(() => undefined);
-    expect(map.foo).toBeUndefined();
+    assert.equal(map.foo, undefined);
   });
 
   it('does not call the getter until a property is accessed', () => {
-    const getter = vi.fn((key: string) => key);
+    const getter = mock.fn((key: string) => key);
     loadOptionalStringMap(getter);
-    expect(getter).not.toHaveBeenCalled();
+    assert.equal(getter.mock.callCount(), 0);
   });
 
   it('calls the getter once per key and caches the result', () => {
-    const getter = vi.fn((key: string) => ({ key }));
+    const getter = mock.fn((key: string) => ({ key }));
     const map = loadOptionalStringMap(getter);
 
     const first = map.foo;
     const second = map.foo;
-    expect(first).toBe(second);
-    expect(getter).toHaveBeenCalledTimes(1);
+    assert.equal(first, second);
+    assert.equal(getter.mock.callCount(), 1);
 
     map.bar;
-    expect(getter).toHaveBeenCalledTimes(2);
-    expect(getter).toHaveBeenNthCalledWith(1, 'foo');
-    expect(getter).toHaveBeenNthCalledWith(2, 'bar');
+    assert.deepEqual(getter.mock.calls.map((c) => c.arguments), [['foo'], ['bar']]);
   });
 
   it('caches undefined results too', () => {
-    const getter = vi.fn(() => undefined);
+    const getter = mock.fn(() => undefined);
     const map = loadOptionalStringMap(getter);
     map.missing;
     map.missing;
     'missing' in map;
-    expect(getter).toHaveBeenCalledTimes(1);
+    assert.equal(getter.mock.callCount(), 1);
   });
 
   it('shares the cache between get and has', () => {
-    const getter = vi.fn((key: string) => key);
+    const getter = mock.fn((key: string) => key);
     const map = loadOptionalStringMap(getter);
-    expect('foo' in map).toBe(true);
-    expect(map.foo).toBe('foo');
-    expect(getter).toHaveBeenCalledTimes(1);
+    assert.equal('foo' in map, true);
+    assert.equal(map.foo, 'foo');
+    assert.equal(getter.mock.callCount(), 1);
   });
 
   it('reports `in` based on whether the value is defined', () => {
     const map = loadOptionalStringMap((key) => (key === 'present' ? 'yes' : undefined));
-    expect('present' in map).toBe(true);
-    expect('missing' in map).toBe(false);
+    assert.equal('present' in map, true);
+    assert.equal('missing' in map, false);
   });
 
   it('treats falsy but defined values as present', () => {
     const map = loadOptionalStringMap((key) => (key === 'empty' ? '' : undefined));
-    expect(map.empty).toBe('');
-    expect('empty' in map).toBe(true);
+    assert.equal(map.empty, '');
+    assert.equal('empty' in map, true);
   });
 
   it('ignores symbol keys without calling the getter', () => {
-    const getter = vi.fn((key: string) => key);
+    const getter = mock.fn((key: string) => key);
     const map = loadOptionalStringMap(getter) as Record<PropertyKey, unknown>;
-    expect(map[Symbol.iterator]).toBeUndefined();
-    expect(Symbol.toPrimitive in map).toBe(false);
-    expect(getter).not.toHaveBeenCalled();
+    assert.equal(map[Symbol.iterator], undefined);
+    assert.equal(Symbol.toPrimitive in map, false);
+    assert.equal(getter.mock.callCount(), 0);
   });
 
   it('is not enumerable', () => {
     const map = loadOptionalStringMap((key) => key);
     map.foo;
-    expect(Object.keys(map)).toEqual([]);
+    assert.deepEqual(Object.keys(map), []);
   });
 
   it('keeps separate caches per map', () => {
@@ -87,8 +86,8 @@ describe('loadOptionalStringMap', () => {
     const getter = () => ++n;
     const a = loadOptionalStringMap(getter);
     const b = loadOptionalStringMap(getter);
-    expect(a.foo).toBe(1);
-    expect(b.foo).toBe(2);
-    expect(a.foo).toBe(1);
+    assert.equal(a.foo, 1);
+    assert.equal(b.foo, 2);
+    assert.equal(a.foo, 1);
   });
 });

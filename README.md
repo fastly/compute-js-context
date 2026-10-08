@@ -177,19 +177,34 @@ npm run test:integration   # integration tests (requires the Fastly CLI)
 
 ### Unit tests
 
-Unit tests live in `test/unit/` and run in Node with [Vitest](https://vitest.dev/). Since the `fastly:*` modules only exist inside the Compute runtime, `vitest.config.ts` aliases them to in-memory fakes in `test/unit/fakes/`. Tests declare which resources exist with `provision()` from `test/unit/fakes/registry.ts`; opening anything else throws, as it does in the real runtime.
+Unit tests live in `test/unit/` and use Node's built-in test runner (`node:test`) with no extra dependencies. They require Node.js 22.18 or later, which runs the TypeScript sources directly. Since the `fastly:*` modules only exist inside the Compute runtime, `test/unit/hooks.ts` (loaded with `--import`) resolves them to in-memory fakes in `test/unit/fakes/`. Tests declare which resources exist with `provision()` from `test/unit/fakes/registry.ts`; opening anything else throws, as it does in the real runtime.
+
+To run a single file or test:
+
+```bash
+node --import ./test/unit/hooks.ts --test test/unit/proxy.test.ts
+node --import ./test/unit/hooks.ts --test --test-name-pattern='falls back to the target' 'test/unit/**/*.test.ts'
+```
 
 ### Integration tests
 
-Integration tests exercise the built library inside the real Compute runtime, against every supported major version of `@fastly/js-compute`:
+Integration tests exercise the packed library inside the real Compute runtime, against each `@fastly/js-compute` version listed in `test/integration/sdk-versions.mjs` (the minimum supported 3.x, the latest 3.x, and the latest 4.x, pinned to exact versions):
 
-1. `npm run build` compiles the library to `build/`.
-2. `test/integration/build-apps.mjs` compiles the test app (`test/integration/app/index.js`) once per SDK version listed in `test/integration/sdk-versions.mjs`, writing `test/integration/app/bin/app-<version>.wasm`.
-3. `test/integration/context.test.ts` serves each Wasm binary with `fastly compute serve` (Viceroy), using the local resources declared in `test/integration/app/fastly.toml`, and checks that each version's JSON report matches the expected values.
+1. `npm run test:integration` cleans, then builds the library to `build/`.
+2. `test/integration/build-apps.mjs` packs the library with `npm pack`. For each SDK version, it copies `test/integration/app/` to `test/integration/.work/sdk-<version>/`, installs the tarball and that exact SDK version there, type-checks `app/type-assertions.ts` against that SDK's types, and compiles `app/index.js` with that SDK's `js-compute` to `bin/main.wasm`.
+3. `test/integration/context.test.ts` serves each Wasm binary with `fastly compute serve` (Viceroy), using the local resources declared in `test/integration/app/fastly.toml`, and checks that each version's JSON report matches the expected values. Viceroy's output is saved to `.work/sdk-<version>/serve.log`.
 
-These require the [Fastly CLI](https://www.fastly.com/documentation/reference/tools/cli/) on your `PATH`. Set `FASTLY_CLI` to use a different binary.
+These require the [Fastly CLI](https://www.fastly.com/documentation/reference/tools/cli/) on your `PATH`, and network access to install each SDK version. Set `FASTLY_CLI` to use a different binary.
 
-The current SDK major is the `@fastly/js-compute` devDependency. Older majors are installed under npm aliases (e.g. `"js-compute-v3": "npm:@fastly/js-compute@^3.46.0"`). To test another major, add an alias devDependency and an entry in `sdk-versions.mjs`.
+To test other SDK versions, set `SDK_VERSIONS` to comma-separated versions or ranges:
+
+```bash
+SDK_VERSIONS="^3,^4" npm run test:integration
+```
+
+After a build, the tests can be re-run without rebuilding with `node --test test/integration/context.test.ts`.
+
+CI runs the unit tests and the integration tests on pull requests and pushes to `main`, and also runs the integration tests weekly against the latest `^3` and `^4`.
 
 ## Issues
 

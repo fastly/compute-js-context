@@ -23,23 +23,20 @@
   "scripts": {
     "prepack": "npm run build",
     "build": "tsc -p tsconfig.build.json",
-    "clean": "rm -rf build test/integration/app/bin",
+    "clean": "rm -rf build test/integration/.work",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p test/tsconfig.json",
     "test": "npm run typecheck && npm run test:unit",
-    "test:unit": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:integration": "npm run build && node test/integration/build-apps.mjs && vitest run --config vitest.integration.config.ts"
+    "test:unit": "node --import ./test/unit/hooks.ts --test \"test/unit/**/*.test.ts\"",
+    "test:coverage": "node --import ./test/unit/hooks.ts --test --experimental-test-coverage --test-coverage-include=\"src/**\" \"test/unit/**/*.test.ts\"",
+    "test:integration": "npm run clean && npm run build && node test/integration/build-apps.mjs && node --test test/integration/context.test.ts"
   },
   "devDependencies": {
     "@fastly/js-compute": "^4.0.0",
     "@types/node": "^24.19.1",
-    "@vitest/coverage-v8": "^5.0.3",
-    "js-compute-v3": "npm:@fastly/js-compute@^3.46.0",
-    "typescript": "^5.9.2",
-    "vitest": "^5.0.3"
+    "typescript": "^7.0.2"
   },
   "peerDependencies": {
-    "@fastly/js-compute": "^3.32.0 || ^4.0.0"
+    "@fastly/js-compute": "^3.33.0 || ^4.0.0"
   },
   "files": [
     "build/**/*.js",
