@@ -19,6 +19,8 @@ SDK_VERSIONS="^3,^4" npm run test:integration   # other SDK versions or ranges
 node --test test/integration/context.test.ts    # re-run against existing builds (same SDK_VERSIONS)
 ```
 
+`npm run clean` removes `build/` and `test/integration/.work/`; `npm run clean:build` removes only `build/`. `prepack` runs `clean:build` (not `clean`), so that a packed package never contains stale files in `build/`. It must not remove `.work/`: `build-apps.mjs` runs `npm pack` (which runs `prepack`) with `.work/` as the destination.
+
 There is no linter, and no test framework dependency: tests use `node:test` + `node:assert/strict` and run `.ts` directly via Node's type stripping (Node ≥ 22.18; `.nvmrc` is 24). Integration tests require the Fastly CLI (`fastly`) on `PATH`, or `FASTLY_CLI` set, and network access (each SDK version is installed from npm).
 
 ## Architecture

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - README: `ENV` returns `undefined` (not `''`) for an environment variable that isn't set, and its type is `Record<string, string | undefined>`
 - README: heading for the `ContextProxy<T>` type (was `ContentProxy<T>`)
+- Clean `build/` before packing, so that stale files in `build/` can't be included in the package
 
 ## [0.6.0] - 2026-10-08
 
