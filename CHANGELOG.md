@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+## [0.6.1] - 2026-10-08
+
 ### Updated
 
 - Build with TypeScript 7
@@ -88,7 +90,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial public release
 
-[unreleased]: https://github.com/fastly/compute-js-context/compare/v0.5.6...HEAD
+[unreleased]: https://github.com/fastly/compute-js-context/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/fastly/compute-js-context/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/fastly/compute-js-context/compare/v0.5.6...v0.6.0
 [0.5.6]: https://github.com/fastly/compute-js-context/compare/v0.5.5...v0.5.6
 [0.5.5]: https://github.com/fastly/compute-js-context/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/fastly/compute-js-context/compare/v0.5.2...v0.5.4
